@@ -1,12 +1,26 @@
 import express from 'express';
 
-
 const app = express();
-const port = 8080;
 
-// Serve static files from the root directory
-app.use(express.static('.'));
+// Serve static files from the /app directory
+app.use('/app', express.static('./src/app'));
 
-app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+// Readiness endpoint handler
+const readinessHandler = (req: express.Request, res: express.Response) => {
+    const responseBody = {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    };
+    
+    res.status(200)
+       .set('Content-Type', 'text/plain; charset=utf-8')
+       .send(JSON.stringify(responseBody));
+};
+
+// Readiness endpoint
+app.get('/healthz', readinessHandler);
+
+app.listen(8080, () => {
+    console.log('Server is running on port 8080');
 });
