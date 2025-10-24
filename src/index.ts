@@ -1,26 +1,14 @@
-import express from 'express';
+import express from "express";
+
+import { handlerReadiness } from "./api/readiness.js";
 
 const app = express();
+const PORT = 8080;
 
-// Serve static files from the /app directory
-app.use('/app', express.static('./src/app'));
+app.use("/app", express.static("./src/app"));
 
-// Readiness endpoint handler
-const readinessHandler = (req: express.Request, res: express.Response) => {
-    const responseBody = {
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    };
-    
-    res.status(200)
-       .set('Content-Type', 'text/plain; charset=utf-8')
-       .send(JSON.stringify(responseBody));
-};
+app.get("/healthz", handlerReadiness);
 
-// Readiness endpoint
-app.get('/healthz', readinessHandler);
-
-app.listen(8080, () => {
-    console.log('Server is running on port 8080');
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
 });
