@@ -17,7 +17,7 @@ export async function middlewareLogResponses(req: Request, res: Response, next: 
 
 export async function middlewareMetricsInc(req: Request, res: Response, next: NextFunction) {
   // Increment the fileserverHits for all requests except /metrics
-  if (req.path !== "/metrics") {
+  if (req.path !== "/api/metrics" && req.path !== "/api/healthz" && req.path !== "/api/reset") {
     configAPI.fileserverHits += 1;
   }
   next();
