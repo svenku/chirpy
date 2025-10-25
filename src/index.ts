@@ -8,6 +8,9 @@ import { renderMetricsHtml } from "./admin/renderMetrics.js";
 const app = express();
 const PORT = 8080;
 
+// Register JSON body parser middleware
+app.use(express.json());
+
 // Register the middleware to log non-OK responses
 app.use(middlewareLogResponses);
 
@@ -24,6 +27,29 @@ app.get("/admin/metrics", async (_req, res) => {
 });
 
 app.get("/admin/reset", resetCounter);
+
+// Validate chirp endpoint
+app.post("/api/validate_chirp", (req, res) => {
+  const { body } = req.body;
+  if (typeof body !== "string") {
+    return res.status(400).json({ error: "Missing or invalid chirp body" });
+  }
+  // Example: Chirp max length 140 characters
+  if (body.length > 140) {
+    return res.status(400).json({ error: "Chirp is too long" });
+  }
+  // If valid, clean chirp body from profanities replace with **** (example)
+  const profanities = ["kerfuffle", "sharbert", "fornax"];
+  let cleanedBody = body;
+
+  for (const profanity of profanities) {
+    const regex = new RegExp(profanity, "gi");
+    cleanedBody = cleanedBody.replace(regex, "****");
+  }
+  
+  res.status(200).json({ cleanedBody: cleanedBody });
+});
+
 
 
 app.listen(PORT, () => {
