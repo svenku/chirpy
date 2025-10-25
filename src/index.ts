@@ -1,7 +1,7 @@
 import express from "express";
 
 import { handlerReadiness } from "./api/readiness.js";
-import { handlerCounter, resetCounter } from "./api/counter.js";
+import { resetCounter } from "./api/counter.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./api/middleware.js";
 import { renderMetricsHtml } from "./admin/renderMetrics.js";
 
