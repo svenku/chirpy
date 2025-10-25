@@ -16,8 +16,8 @@ export async function middlewareLogResponses(req: Request, res: Response, next: 
 // Middleware to count server hits
 
 export async function middlewareMetricsInc(req: Request, res: Response, next: NextFunction) {
-  // Increment the fileserverHits for all requests except /metrics
-  if (req.path !== "/api/metrics" && req.path !== "/api/healthz" && req.path !== "/api/reset") {
+  // Increment the fileserverHits for all requests except admin endpoints
+  if (req.path !== "/admin/metrics" && req.path !== "/api/healthz" && req.path !== "/admin/reset") {
     configAPI.fileserverHits += 1;
   }
   next();

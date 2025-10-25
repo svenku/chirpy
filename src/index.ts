@@ -3,6 +3,7 @@ import express from "express";
 import { handlerReadiness } from "./api/readiness.js";
 import { handlerCounter, resetCounter } from "./api/counter.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./api/middleware.js";
+import { renderMetricsHtml } from "./admin/renderMetrics.js";
 
 const app = express();
 const PORT = 8080;
@@ -16,8 +17,13 @@ app.use(middlewareMetricsInc);
 app.use("/app", express.static("./src/app"));
 
 app.get("/api/healthz", handlerReadiness);
-app.get("/api/metrics", handlerCounter);
-app.get("/api/reset", resetCounter);
+
+// Remove /api/metrics route and add /admin/metrics route that serves HTML
+app.get("/admin/metrics", async (_req, res) => {
+  await renderMetricsHtml(res);
+});
+
+app.get("/admin/reset", resetCounter);
 
 
 app.listen(PORT, () => {
