@@ -5,6 +5,8 @@ import { resetCounter } from "./api/counter.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./api/middleware.js";
 import { handlerMetrics } from "./admin/metrics.js";
 import { handlerValidateChirp } from "./api/chirps.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { asyncHandler } from "./middleware/asyncHandler.js";
 
 const app = express();
 const PORT = 8080;
@@ -27,8 +29,11 @@ app.get("/admin/metrics", handlerMetrics);
 
 app.get("/admin/reset", resetCounter);
 
-// Validate chirp endpoint
-app.post("/api/validate_chirp", handlerValidateChirp);
+// Validate chirp endpoint with async error handling
+app.post("/api/validate_chirp", asyncHandler(handlerValidateChirp));
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);

@@ -1,17 +1,17 @@
 import type { Request, Response } from "express";
-import { profanityList } from "./profanityList";
+import { profanityList } from "./profanityList.js";
+import { BadRequestError } from "../errors/customErrors.js";
 
 export async function handlerValidateChirp(req: Request, res: Response) {
-  
   const { body } = req.body;
   
   if (typeof body !== "string") {
-    return res.status(400).json({ error: "Missing or invalid chirp body" });
+    throw new BadRequestError("Missing or invalid chirp body");
   }
 
   // Check chirp max length 140 characters
   if (body.length > 140) {
-    return res.status(400).json({ error: "Chirp is too long" });
+    throw new BadRequestError("Chirp is too long. Max length is 140");
   }
 
   // If valid, clean chirp body from profanities replace with **** (example)
