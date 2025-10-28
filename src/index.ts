@@ -7,9 +7,19 @@ import { handlerMetrics } from "./admin/metrics.js";
 import { handlerValidateChirp } from "./api/chirps.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { asyncHandler } from "./middleware/asyncHandler.js";
+import { configAPI } from "./config.js";
 
 const app = express();
 const PORT = 8080;
+
+import postgres from "postgres";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { drizzle } from "drizzle-orm/postgres-js";
+
+const migrationClient = postgres(configAPI.dbUrl, { max: 1 });
+await migrate(drizzle(migrationClient), configAPI.migrationConfig);
+
+
 
 // Register JSON body parser middleware
 app.use(express.json());
