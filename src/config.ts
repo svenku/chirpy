@@ -5,12 +5,15 @@ type APIConfig = {
     fileserverHits: number;
     dbUrl: string;
     migrationConfig: MigrationConfig;
+    platform: string;
 };
 
 const dbUrl = process.env.DB_URL;
 if (!dbUrl) {
     throw new Error('DB_URL environment variable is required');
 }
+
+const platform = process.env.PLATFORM || 'dev';
 
 const migrationConfig: MigrationConfig = {
   migrationsFolder: "./src/db/generated",
@@ -20,6 +23,7 @@ export const configAPI: APIConfig = {
     fileserverHits: 0,
     dbUrl,
     migrationConfig,
+    platform,
 };
 
 

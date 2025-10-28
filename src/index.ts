@@ -1,10 +1,11 @@
 import express from "express";
 
 import { handlerReadiness } from "./api/readiness.js";
-import { resetCounter } from "./api/counter.js";
+import { resetAll } from "./api/reset.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./api/middleware.js";
 import { handlerMetrics } from "./admin/metrics.js";
 import { handlerValidateChirp } from "./api/chirps.js";
+import { handlerCreateUser } from "./api/users.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { asyncHandler } from "./middleware/asyncHandler.js";
 import { configAPI } from "./config.js";
@@ -37,10 +38,13 @@ app.get("/api/healthz", handlerReadiness);
 // Remove /api/metrics route and add /admin/metrics route that serves HTML
 app.get("/admin/metrics", handlerMetrics);
 
-app.get("/admin/reset", resetCounter);
+app.post("/admin/reset", asyncHandler(resetAll));
 
 // Validate chirp endpoint with async error handling
 app.post("/api/validate_chirp", asyncHandler(handlerValidateChirp));
+
+// Create user endpoint
+app.post("/api/users", asyncHandler(handlerCreateUser));
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
