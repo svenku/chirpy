@@ -1,12 +1,17 @@
 import type { Request, Response } from "express";
 import { profanityList } from "./profanityList.js";
 import { BadRequestError } from "../errors/customErrors.js";
+import { createChirp, getAllChirps } from "../db/queries/chirps.js";
 
-export async function handlerValidateChirp(req: Request, res: Response) {
-  const { body } = req.body;
+export async function handlerCreateChirp(req: Request, res: Response) {
+  const { body, userId } = req.body;
   
   if (typeof body !== "string") {
     throw new BadRequestError("Missing or invalid chirp body");
+  }
+
+  if (!userId) {
+    throw new BadRequestError("User ID is required");
   }
 
   // Check chirp max length 140 characters
@@ -23,5 +28,13 @@ export async function handlerValidateChirp(req: Request, res: Response) {
     cleanedBody = cleanedBody.replace(regex, "****");
   }
   
-  res.status(200).json({ cleanedBody: cleanedBody });
+  // Save chirp to database
+  const newChirp = await createChirp({ body: cleanedBody, userId });
+  
+  res.status(201).json(newChirp);
+}
+
+export async function handlerGetAllChirps(req: Request, res: Response) {
+  const chirps = await getAllChirps();
+  res.status(200).json(chirps);
 }

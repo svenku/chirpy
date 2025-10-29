@@ -4,7 +4,8 @@ import { handlerReadiness } from "./api/readiness.js";
 import { resetAll } from "./api/reset.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./api/middleware.js";
 import { handlerMetrics } from "./admin/metrics.js";
-import { handlerValidateChirp } from "./api/chirps.js";
+import { handlerCreateChirp } from "./api/chirps.js";
+import { handlerGetAllChirps } from "./api/chirps.js";
 import { handlerCreateUser } from "./api/users.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { asyncHandler } from "./middleware/asyncHandler.js";
@@ -40,11 +41,14 @@ app.get("/admin/metrics", handlerMetrics);
 
 app.post("/admin/reset", asyncHandler(resetAll));
 
-// Validate chirp endpoint with async error handling
-app.post("/api/validate_chirp", asyncHandler(handlerValidateChirp));
-
 // Create user endpoint
 app.post("/api/users", asyncHandler(handlerCreateUser));
+
+// Create chirp endpoint
+app.post("/api/chirps", asyncHandler(handlerCreateChirp));
+
+// get chirps endpoint
+app.get("/api/chirps", asyncHandler(handlerGetAllChirps));
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
