@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { profanityList } from "./profanityList.js";
-import { BadRequestError } from "../errors/customErrors.js";
-import { createChirp, getAllChirps } from "../db/queries/chirps.js";
+import { BadRequestError, NotFoundError } from "../errors/customErrors.js";
+import { createChirp, getAllChirps, getChirpById } from "../db/queries/chirps.js";
 
 export async function handlerCreateChirp(req: Request, res: Response) {
   const { body, userId } = req.body;
@@ -37,4 +37,20 @@ export async function handlerCreateChirp(req: Request, res: Response) {
 export async function handlerGetAllChirps(req: Request, res: Response) {
   const chirps = await getAllChirps();
   res.status(200).json(chirps);
+}
+
+export async function handlerGetChirpById(req: Request, res: Response) {
+  const { chirpID } = req.params;
+  
+  if (!chirpID) {
+    throw new BadRequestError("Chirp ID is required");
+  }
+  
+  const chirp = await getChirpById(chirpID);
+  
+  if (!chirp) {
+    throw new NotFoundError("Chirp not found");
+  }
+  
+  res.status(200).json(chirp);
 }

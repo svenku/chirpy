@@ -6,6 +6,7 @@ import { middlewareLogResponses, middlewareMetricsInc } from "./api/middleware.j
 import { handlerMetrics } from "./admin/metrics.js";
 import { handlerCreateChirp } from "./api/chirps.js";
 import { handlerGetAllChirps } from "./api/chirps.js";
+import { handlerGetChirpById } from "./api/chirps.js";
 import { handlerCreateUser } from "./api/users.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { asyncHandler } from "./middleware/asyncHandler.js";
@@ -49,6 +50,9 @@ app.post("/api/chirps", asyncHandler(handlerCreateChirp));
 
 // get chirps endpoint
 app.get("/api/chirps", asyncHandler(handlerGetAllChirps));
+
+// get single chirp by ID endpoint
+app.get("/api/chirps/:chirpID", asyncHandler(handlerGetChirpById));
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
