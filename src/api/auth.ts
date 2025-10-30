@@ -2,8 +2,10 @@ import * as argon2 from 'argon2';
 import { Request, Response } from 'express';
 import { BadRequestError, UnauthorizedError } from '../errors/customErrors.js';
 import { getUserByEmail } from '../db/queries/users.js';
+import { createRefreshToken, getRefreshToken, revokeRefreshToken } from '../db/queries/refreshTokens.js';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { configAPI } from '../config.js';
+import { randomBytes } from 'crypto';
 
 // Define the JWT payload type
 type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
@@ -26,7 +28,7 @@ export async function checkPasswordHash(password: string, hash: string): Promise
 }
 
 export async function handlerLogin(req: Request, res: Response) {
-    const { email, password, expiresInSeconds } = req.body;
+    const { email, password } = req.body;
 
     if (!email) {
         throw new BadRequestError("Email is required");
@@ -34,26 +36,6 @@ export async function handlerLogin(req: Request, res: Response) {
 
     if (!password) {
         throw new BadRequestError("Password is required");
-    }
-
-    // Handle optional expiresInSeconds with validation
-    const maxExpirationSeconds = 3600; // 1 hour in seconds
-    const defaultExpirationSeconds = 3600; // 1 hour default
-    
-    let tokenExpirationSeconds: number;
-    
-    if (expiresInSeconds === undefined || expiresInSeconds === null) {
-        // Not specified, use default
-        tokenExpirationSeconds = defaultExpirationSeconds;
-    } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
-        // Invalid value, use default
-        tokenExpirationSeconds = defaultExpirationSeconds;
-    } else if (expiresInSeconds > maxExpirationSeconds) {
-        // Over 1 hour, cap at 1 hour
-        tokenExpirationSeconds = maxExpirationSeconds;
-    } else {
-        // Valid value within limits
-        tokenExpirationSeconds = expiresInSeconds;
     }
 
     const user = await getUserByEmail(email);
@@ -68,13 +50,21 @@ export async function handlerLogin(req: Request, res: Response) {
         return res.status(401).json({ error: "Incorrect email or password" });
     }
 
-        // Successful login - create JWT token
-    const token = makeJWT(user.id, tokenExpirationSeconds, configAPI.serverSecret);
+    // Successful login - create JWT token (expires in 1 hour)
+    const token = makeJWT(user.id, 3600, configAPI.serverSecret);
+    
+    // Create refresh token (expires in 60 days)
+    const refreshToken = makeRefreshToken();
+    const refreshTokenExpiresAt = new Date();
+    refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 60); // 60 days from now
+    
+    await createRefreshToken(user.id, refreshToken, refreshTokenExpiresAt);
     
     const { hashed_password, ...userWithoutPassword } = user;
     res.status(200).json({
         ...userWithoutPassword,
-        token
+        token,
+        refreshToken
     });
 } 
 
@@ -112,4 +102,63 @@ export function validateJWT(tokenString: string, secret: string): string {
             throw new UnauthorizedError("Token validation failed");
         }
     }
+}
+
+export function makeRefreshToken(): string {
+    const token = randomBytes(256).toString('hex');
+    return token;
+}
+
+export async function handlerRefreshToken(req: Request, res: Response) {
+    // Get refresh token from Authorization header
+    const refreshToken = getBearerToken(req);
+
+    // Get refresh token from database
+    const storedToken = await getRefreshToken(refreshToken);
+
+    if (!storedToken) {
+        return res.status(401).json({ error: "Invalid refresh token" });
+    }
+
+    // Check if token is expired
+    if (new Date() > storedToken.expiresAt) {
+        // Clean up expired token
+        await revokeRefreshToken(refreshToken);
+        return res.status(401).json({ error: "Refresh token has expired" });
+    }
+
+    // Check if token is revoked
+    if (storedToken.revokedAt) {
+        return res.status(401).json({ error: "Refresh token has been revoked" });
+    }
+
+    // Create new JWT token (expires in 1 hour)
+    const newJwtToken = makeJWT(storedToken.userId, 3600, configAPI.serverSecret);
+
+    res.status(200).json({
+        token: newJwtToken
+    });
+}
+
+export async function handlerRevokeToken(req: Request, res: Response) {
+    // Get refresh token from Authorization header
+    const refreshToken = getBearerToken(req);
+
+    // Get refresh token from database
+    const storedToken = await getRefreshToken(refreshToken);
+
+    if (!storedToken) {
+        return res.status(401).json({ error: "Invalid refresh token" });
+    }
+
+    // Check if token is already revoked
+    if (storedToken.revokedAt) {
+        return res.status(401).json({ error: "Refresh token has already been revoked" });
+    }
+
+    // Revoke the refresh token
+    await revokeRefreshToken(refreshToken);
+
+    // Return 204 No Content
+    res.status(204).send();
 }
