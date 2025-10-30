@@ -15,6 +15,13 @@
       "when": 1761733227656,
       "tag": "0001_confused_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761754342966,
+      "tag": "0002_salty_richard_fisk",
+      "breakpoints": true
     }
   ]
 }

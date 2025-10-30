@@ -8,6 +8,7 @@ import { handlerCreateChirp } from "./api/chirps.js";
 import { handlerGetAllChirps } from "./api/chirps.js";
 import { handlerGetChirpById } from "./api/chirps.js";
 import { handlerCreateUser } from "./api/users.js";
+import { handlerLogin } from "./api/auth.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { asyncHandler } from "./middleware/asyncHandler.js";
 import { configAPI } from "./config.js";
@@ -44,6 +45,9 @@ app.post("/admin/reset", asyncHandler(resetAll));
 
 // Create user endpoint
 app.post("/api/users", asyncHandler(handlerCreateUser));
+
+// Create login endpoint
+app.post("/api/login", asyncHandler(handlerLogin));
 
 // Create chirp endpoint
 app.post("/api/chirps", asyncHandler(handlerCreateChirp));
