@@ -3,10 +3,19 @@ import { Request, Response } from 'express';
 import { BadRequestError, UnauthorizedError } from '../errors/customErrors.js';
 import { getUserByEmail } from '../db/queries/users.js';
 import jwt, { JwtPayload } from 'jsonwebtoken';
+import { configAPI } from '../config.js';
 
 // Define the JWT payload type
 type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
 
+export function getBearerToken(req: Request): string {
+    const authHeader = req.get('authorization');
+    if (!authHeader) {
+        throw new BadRequestError("Authorization header is missing");
+    }
+    const [, token] = authHeader.split(" ");
+    return token;
+}
 
 export async function hashPassword(password: string): Promise<string> {
     return await argon2.hash(password);
@@ -17,7 +26,7 @@ export async function checkPasswordHash(password: string, hash: string): Promise
 }
 
 export async function handlerLogin(req: Request, res: Response) {
-    const { email, password } = req.body;
+    const { email, password, expiresInSeconds } = req.body;
 
     if (!email) {
         throw new BadRequestError("Email is required");
@@ -25,6 +34,26 @@ export async function handlerLogin(req: Request, res: Response) {
 
     if (!password) {
         throw new BadRequestError("Password is required");
+    }
+
+    // Handle optional expiresInSeconds with validation
+    const maxExpirationSeconds = 3600; // 1 hour in seconds
+    const defaultExpirationSeconds = 3600; // 1 hour default
+    
+    let tokenExpirationSeconds: number;
+    
+    if (expiresInSeconds === undefined || expiresInSeconds === null) {
+        // Not specified, use default
+        tokenExpirationSeconds = defaultExpirationSeconds;
+    } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
+        // Invalid value, use default
+        tokenExpirationSeconds = defaultExpirationSeconds;
+    } else if (expiresInSeconds > maxExpirationSeconds) {
+        // Over 1 hour, cap at 1 hour
+        tokenExpirationSeconds = maxExpirationSeconds;
+    } else {
+        // Valid value within limits
+        tokenExpirationSeconds = expiresInSeconds;
     }
 
     const user = await getUserByEmail(email);
@@ -39,9 +68,14 @@ export async function handlerLogin(req: Request, res: Response) {
         return res.status(401).json({ error: "Incorrect email or password" });
     }
 
-    // Successful login
+        // Successful login - create JWT token
+    const token = makeJWT(user.id, tokenExpirationSeconds, configAPI.serverSecret);
+    
     const { hashed_password, ...userWithoutPassword } = user;
-    res.status(200).json(userWithoutPassword);
+    res.status(200).json({
+        ...userWithoutPassword,
+        token
+    });
 } 
 
 

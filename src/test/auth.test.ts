@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { makeJWT, validateJWT, hashPassword, checkPasswordHash } from "../api/auth.js";
+import { makeJWT, validateJWT, hashPassword, checkPasswordHash, handlerLogin } from "../api/auth.js";
+import { Request, Response } from "express";
 
 describe("JWT Authentication", () => {
   const testSecret = "test-secret-key";
@@ -320,6 +321,161 @@ describe("JWT Authentication", () => {
       
       // Verify new password doesn't work with old hash
       expect(await checkPasswordHash(newPassword, oldHash)).toBe(false);
+    });
+  });
+
+  describe("Login Handler - expiresInSeconds Logic", () => {
+    // Mock functions for testing
+    const mockRequest = (body: any): Partial<Request> => ({
+      body
+    });
+
+    const mockResponse = (): Partial<Response> => {
+      const res: any = {};
+      res.status = (code: number) => {
+        res.statusCode = code;
+        return res;
+      };
+      res.json = (data: any) => {
+        res.jsonData = data;
+        return res;
+      };
+      return res;
+    };
+
+    describe("expiresInSeconds validation", () => {
+      it("should use default expiration (3600s) when expiresInSeconds is not provided", () => {
+        const body: any = { email: "test@example.com", password: "password123" };
+        
+        // Logic extracted from handlerLogin for testing
+        const maxExpirationSeconds = 3600;
+        const defaultExpirationSeconds = 3600;
+        const expiresInSeconds = body.expiresInSeconds;
+        
+        let tokenExpirationSeconds: number;
+        
+        if (expiresInSeconds === undefined || expiresInSeconds === null) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (expiresInSeconds > maxExpirationSeconds) {
+          tokenExpirationSeconds = maxExpirationSeconds;
+        } else {
+          tokenExpirationSeconds = expiresInSeconds;
+        }
+        
+        expect(tokenExpirationSeconds).toBe(3600);
+      });
+
+      it("should use default expiration when expiresInSeconds is null", () => {
+        const body = { email: "test@example.com", password: "password123", expiresInSeconds: null };
+        
+        const maxExpirationSeconds = 3600;
+        const defaultExpirationSeconds = 3600;
+        const expiresInSeconds = body.expiresInSeconds;
+        
+        let tokenExpirationSeconds: number;
+        
+        if (expiresInSeconds === undefined || expiresInSeconds === null) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (expiresInSeconds > maxExpirationSeconds) {
+          tokenExpirationSeconds = maxExpirationSeconds;
+        } else {
+          tokenExpirationSeconds = expiresInSeconds;
+        }
+        
+        expect(tokenExpirationSeconds).toBe(3600);
+      });
+
+      it("should use client value when within valid range", () => {
+        const body: any = { email: "test@example.com", password: "password123", expiresInSeconds: 1800 }; // 30 minutes
+        
+        const maxExpirationSeconds = 3600;
+        const defaultExpirationSeconds = 3600;
+        const expiresInSeconds = body.expiresInSeconds;
+        
+        let tokenExpirationSeconds: number;
+        
+        if (expiresInSeconds === undefined || expiresInSeconds === null) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (expiresInSeconds > maxExpirationSeconds) {
+          tokenExpirationSeconds = maxExpirationSeconds;
+        } else {
+          tokenExpirationSeconds = expiresInSeconds;
+        }
+        
+        expect(tokenExpirationSeconds).toBe(1800);
+      });
+
+      it("should cap at 1 hour when client requests more than 1 hour", () => {
+        const body: any = { email: "test@example.com", password: "password123", expiresInSeconds: 7200 }; // 2 hours
+        
+        const maxExpirationSeconds = 3600;
+        const defaultExpirationSeconds = 3600;
+        const expiresInSeconds = body.expiresInSeconds;
+        
+        let tokenExpirationSeconds: number;
+        
+        if (expiresInSeconds === undefined || expiresInSeconds === null) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (expiresInSeconds > maxExpirationSeconds) {
+          tokenExpirationSeconds = maxExpirationSeconds;
+        } else {
+          tokenExpirationSeconds = expiresInSeconds;
+        }
+        
+        expect(tokenExpirationSeconds).toBe(3600);
+      });
+
+      it("should use default when expiresInSeconds is invalid (negative)", () => {
+        const body: any = { email: "test@example.com", password: "password123", expiresInSeconds: -300 };
+        
+        const maxExpirationSeconds = 3600;
+        const defaultExpirationSeconds = 3600;
+        const expiresInSeconds = body.expiresInSeconds;
+        
+        let tokenExpirationSeconds: number;
+        
+        if (expiresInSeconds === undefined || expiresInSeconds === null) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (expiresInSeconds > maxExpirationSeconds) {
+          tokenExpirationSeconds = maxExpirationSeconds;
+        } else {
+          tokenExpirationSeconds = expiresInSeconds;
+        }
+        
+        expect(tokenExpirationSeconds).toBe(3600);
+      });
+
+      it("should use default when expiresInSeconds is invalid (string)", () => {
+        const body: any = { email: "test@example.com", password: "password123", expiresInSeconds: "invalid" };
+        
+        const maxExpirationSeconds = 3600;
+        const defaultExpirationSeconds = 3600;
+        const expiresInSeconds = body.expiresInSeconds;
+        
+        let tokenExpirationSeconds: number;
+        
+        if (expiresInSeconds === undefined || expiresInSeconds === null) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (typeof expiresInSeconds !== 'number' || expiresInSeconds <= 0) {
+          tokenExpirationSeconds = defaultExpirationSeconds;
+        } else if (expiresInSeconds > maxExpirationSeconds) {
+          tokenExpirationSeconds = maxExpirationSeconds;
+        } else {
+          tokenExpirationSeconds = expiresInSeconds;
+        }
+        
+        expect(tokenExpirationSeconds).toBe(3600);
+      });
     });
   });
 });

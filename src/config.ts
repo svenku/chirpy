@@ -6,6 +6,7 @@ type APIConfig = {
     dbUrl: string;
     migrationConfig: MigrationConfig;
     platform: string;
+    serverSecret: string;
 };
 
 const dbUrl = process.env.DB_URL;
@@ -19,11 +20,17 @@ const migrationConfig: MigrationConfig = {
   migrationsFolder: "./src/db/generated",
 };
 
+const serverSecret = process.env.SECRET;
+if (!serverSecret) {
+    throw new Error('SECRET environment variable is required');
+}
+
 export const configAPI: APIConfig = {
     fileserverHits: 0,
     dbUrl,
     migrationConfig,
     platform,
+    serverSecret,
 };
 
 

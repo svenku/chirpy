@@ -2,16 +2,18 @@ import type { Request, Response } from "express";
 import { profanityList } from "./profanityList.js";
 import { BadRequestError, NotFoundError } from "../errors/customErrors.js";
 import { createChirp, getAllChirps, getChirpById } from "../db/queries/chirps.js";
+import { getBearerToken, validateJWT } from "./auth.js";
+import { configAPI } from "../config.js";
 
 export async function handlerCreateChirp(req: Request, res: Response) {
-  const { body, userId } = req.body;
+  // Require authentication - extract user ID from JWT token
+  const token = getBearerToken(req);
+  const userId = validateJWT(token, configAPI.serverSecret);
+  
+  const { body } = req.body;
   
   if (typeof body !== "string") {
     throw new BadRequestError("Missing or invalid chirp body");
-  }
-
-  if (!userId) {
-    throw new BadRequestError("User ID is required");
   }
 
   // Check chirp max length 140 characters
