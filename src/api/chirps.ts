@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { profanityList } from "./profanityList.js";
 import { BadRequestError, NotFoundError } from "../errors/customErrors.js";
-import { createChirp, getAllChirps, getChirpById } from "../db/queries/chirps.js";
+import { createChirp, getAllChirps, getChirpById, deleteChirpById } from "../db/queries/chirps.js";
 import { getBearerToken, validateJWT } from "./auth.js";
 import { configAPI } from "../config.js";
 
@@ -55,4 +55,46 @@ export async function handlerGetChirpById(req: Request, res: Response) {
   }
   
   res.status(200).json(chirp);
+}
+
+export async function handlerDeleteChirp(req: Request, res: Response) {
+  // Check authentication
+  let token: string;
+  let userId: string;
+  
+  try {
+    token = getBearerToken(req);
+  } catch (error) {
+    return res.status(401).json({ error: "Access token is required" });
+  }
+  
+  try {
+    userId = await validateJWT(token, configAPI.serverSecret);
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid or malformed access token" });
+  }
+  
+  const { chirpID } = req.params;
+  
+  if (!chirpID) {
+    return res.status(400).json({ error: "Chirp ID is required" });
+  }
+  
+  // Get the chirp to check if it exists and if user owns it
+  const chirp = await getChirpById(chirpID);
+  
+  if (!chirp) {
+    return res.status(404).json({ error: "Chirp not found" });
+  }
+  
+  // Check if the user is the author of the chirp
+  if (chirp.userId !== userId) {
+    return res.status(403).json({ error: "You can only delete your own chirps" });
+  }
+  
+  // Delete the chirp
+  await deleteChirpById(chirpID);
+  
+  // Return 204 No Content for successful deletion
+  res.status(204).send();
 }

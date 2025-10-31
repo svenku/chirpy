@@ -6,7 +6,7 @@ import { middlewareLogResponses, middlewareMetricsInc } from "./api/middleware.j
 import { handlerMetrics } from "./admin/metrics.js";
 import { handlerCreateChirp } from "./api/chirps.js";
 import { handlerGetAllChirps } from "./api/chirps.js";
-import { handlerGetChirpById } from "./api/chirps.js";
+import { handlerGetChirpById, handlerDeleteChirp } from "./api/chirps.js";
 import { handlerCreateUser, handlerUpdateUser } from "./api/users.js";
 import { handlerLogin, handlerRefreshToken, handlerRevokeToken } from "./api/auth.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -64,6 +64,9 @@ app.get("/api/chirps", asyncHandler(handlerGetAllChirps));
 
 // get single chirp by ID endpoint
 app.get("/api/chirps/:chirpID", asyncHandler(handlerGetChirpById));
+
+// delete chirp by ID endpoint
+app.delete("/api/chirps/:chirpID", asyncHandler(handlerDeleteChirp));
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
