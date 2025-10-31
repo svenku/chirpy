@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { profanityList } from "./profanityList.js";
 import { BadRequestError, NotFoundError } from "../errors/customErrors.js";
-import { createChirp, getAllChirps, getChirpById, deleteChirpById } from "../db/queries/chirps.js";
+import { createChirp, getAllChirps, getChirpById, deleteChirpById, getChirpsByAuthor } from "../db/queries/chirps.js";
 import { getBearerToken, validateJWT } from "./auth.js";
 import { configAPI } from "../config.js";
 
@@ -37,7 +37,20 @@ export async function handlerCreateChirp(req: Request, res: Response) {
 }
 
 export async function handlerGetAllChirps(req: Request, res: Response) {
-  const chirps = await getAllChirps();
+  const { authorId } = req.query;
+  
+  let chirps;
+  if (authorId) {
+    // Filter chirps by author ID if provided
+    if (typeof authorId !== 'string') {
+      throw new BadRequestError("Author ID must be a string");
+    }
+    chirps = await getChirpsByAuthor(authorId);
+  } else {
+    // Return all chirps if no author filter
+    chirps = await getAllChirps();
+  }
+  
   res.status(200).json(chirps);
 }
 

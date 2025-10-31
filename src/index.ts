@@ -9,6 +9,7 @@ import { handlerGetAllChirps } from "./api/chirps.js";
 import { handlerGetChirpById, handlerDeleteChirp } from "./api/chirps.js";
 import { handlerCreateUser, handlerUpdateUser } from "./api/users.js";
 import { handlerLogin, handlerRefreshToken, handlerRevokeToken } from "./api/auth.js";
+import { handlerPolkaWebhooks } from "./api/polka.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { asyncHandler } from "./middleware/asyncHandler.js";
 import { configAPI } from "./config.js";
@@ -68,9 +69,13 @@ app.get("/api/chirps/:chirpID", asyncHandler(handlerGetChirpById));
 // delete chirp by ID endpoint
 app.delete("/api/chirps/:chirpID", asyncHandler(handlerDeleteChirp));
 
+// Upgrade user to Chirpy Red
+app.post("/api/polka/webhooks", asyncHandler(handlerPolkaWebhooks));
+
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
+

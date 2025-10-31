@@ -162,3 +162,13 @@ export async function handlerRevokeToken(req: Request, res: Response) {
     // Return 204 No Content
     res.status(204).send();
 }
+
+export async function getAPIKey(req: Request): Promise<string> {
+    const authHeader = req.get('authorization');
+    console.log("Authorization Header:", authHeader);
+    if (!authHeader) {
+        throw new BadRequestError("Authorization header is missing");
+    }
+    const [, apiKey] = authHeader.split("ApiKey ");
+    return apiKey;
+}

@@ -76,3 +76,4 @@ export async function handlerUpdateUser(req: Request, res: Response) {
 
     res.status(200).json(userWithoutPassword);
 }
+

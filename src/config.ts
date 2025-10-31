@@ -7,6 +7,7 @@ type APIConfig = {
     migrationConfig: MigrationConfig;
     platform: string;
     serverSecret: string;
+    polkaKey: string;
 };
 
 const dbUrl = process.env.DB_URL;
@@ -25,12 +26,18 @@ if (!serverSecret) {
     throw new Error('SECRET environment variable is required');
 }
 
+const polkaKey = process.env.POLKA_KEY;
+if (!polkaKey) {
+    throw new Error('POLKA_KEY environment variable is required');
+}
+
 export const configAPI: APIConfig = {
     fileserverHits: 0,
     dbUrl,
     migrationConfig,
     platform,
     serverSecret,
+    polkaKey,
 };
 
 
