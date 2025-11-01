@@ -37,7 +37,12 @@ export async function handlerCreateChirp(req: Request, res: Response) {
 }
 
 export async function handlerGetAllChirps(req: Request, res: Response) {
-  const { authorId } = req.query;
+  const { authorId, sort } = req.query;
+  
+  // Validate sort parameter if provided
+  if (sort && sort !== "asc" && sort !== "desc") {
+    throw new BadRequestError("Sort parameter must be 'asc' or 'desc'");
+  }
   
   let chirps;
   if (authorId) {
@@ -49,6 +54,15 @@ export async function handlerGetAllChirps(req: Request, res: Response) {
   } else {
     // Return all chirps if no author filter
     chirps = await getAllChirps();
+  }
+  
+  // Sort chirps by createdAt if sort parameter is provided
+  if (sort) {
+    chirps.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sort === "asc" ? dateA - dateB : dateB - dateA;
+    });
   }
   
   res.status(200).json(chirps);
